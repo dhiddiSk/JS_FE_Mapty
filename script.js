@@ -1,27 +1,57 @@
-'use strict';
+"use strict";
 
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const form = document.querySelector('.form');
-const containerWorkouts = document.querySelector('.workouts');
-const inputType = document.querySelector('.form__input--type');
-const inputDistance = document.querySelector('.form__input--distance');
-const inputDuration = document.querySelector('.form__input--duration');
-const inputCadence = document.querySelector('.form__input--cadence');
-const inputElevation = document.querySelector('.form__input--elevation');
+const form = document.querySelector(".form");
+const containerWorkouts = document.querySelector(".workouts");
+const inputType = document.querySelector(".form__input--type");
+const inputDistance = document.querySelector(".form__input--distance");
+const inputDuration = document.querySelector(".form__input--duration");
+const inputCadence = document.querySelector(".form__input--cadence");
+const inputElevation = document.querySelector(".form__input--elevation");
 
 // get the current position of the devices from the browser geolocation api.
 
-navigator.geolocation.getCurrentPosition((currentPosition, retrievalError) => {
+let map;
 
-        const {latitude} = currentPosition.coords;
-        const {longitude} = currentPosition.coords;
-        console.log(latitude);
-        console.log(longitude);
+navigator.geolocation.getCurrentPosition(
+  function (currentPosition) {
+    if (currentPosition.coords) {
+      const { latitude } = currentPosition.coords;
+      const { longitude } = currentPosition.coords;
 
-    // if(currentPosition){
-    //     console.log(`The current position value is ${currentPosition.getCurrentPosition}`);
-    // }
+      map = L.map("map").setView([latitude, longitude], 13);
 
-})
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      map.on('click', function(eventObject) {
+        let {lat, lng} = eventObject.latlng;
+        L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(
+            L.popup({
+                maxWidth : 300,
+                minWidth : 50,
+                autoClose : false,
+                closeButton : false,
+                className : 'running-popup',
+                closeOnClick : false
+            }
+            )).setPopupContent("Workout")
+            .openPopup();
+            
+
+      });
+    }
+  },
+
+  function (retrievalError) {
+    console.log(`The current position value is ${retrievalError.message}`);
+  }
+);
+
+
