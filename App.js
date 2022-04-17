@@ -23,56 +23,70 @@ const inputDuration = document.querySelector(".form__input--duration");
 const inputCadence = document.querySelector(".form__input--cadence");
 const inputElevation = document.querySelector(".form__input--elevation");
 
-let map;
-let mapOnClickEventObject;
+class App {
+  #map;
+  #mapOnClickEventObject;
 
-//Workouts Array
-const workOuts = [];
+  constructor() {
+    this._getPosition();
+    inputType.addEventListener("change", this._toggleElevationField.bind(this));
+    form.addEventListener("submit", this._newWorkOut.bind(this));
+  }
 
-const _getPosition = function () {
-  navigator.geolocation.getCurrentPosition(
-    function (currentPosition) {
-      if (currentPosition.coords) {
-        const { latitude, longitude } = currentPosition.coords;
-        const cod = [latitude, longitude];
-        _loadMap(cod);
+  _getPosition() {
+    navigator.geolocation.getCurrentPosition(
+      this._loadMap.bind(this),
+      function (positionRetrievalError) {
+        console.log(
+          `Problem with position retrieval: ${positionRetrievalError.message}`
+        );
       }
-    },
+    );
+  }
 
-    function (positionRetrievalError) {
-      console.log(
-        `The current position value is ${positionRetrievalError.message}`
-      );
+  _loadMap(position) {
+    if (position.coords) {
+      const { latitude, longitude } = position.coords;
+      const cod = [latitude, longitude];
+      this.#map = L.map("map").setView(cod, 13);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(this.#map);
     }
-  );
-};
+    this.#map.on("click", this._showForm.bind(this));
+  }
 
-const _loadMap = function (position) {
-  map = L.map("map").setView(position, 13);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map);
-};
-
-const _showForm = function () {
-  map.on("click", function (eventObject) {
+  _showForm(eventObject) {
     form.classList.remove("hidden");
+    this.#mapOnClickEventObject = eventObject;
+  }
 
-    mapOnClickEventObject = eventObject;
-  });
-};
-
-const _toggleElevationField = function () {
-  inputType.addEventListener("change", function () {
+  _toggleElevationField() {
     inputElevation.closest(".form__row").classList.toggle("form__row--hidden");
     inputCadence.closest(".form__row").classList.toggle("form__row--hidden");
-  });
-};
+  }
 
-const _newWorkout = function () {
+  _newWorkOut(e) {
+    e.preventDefault();
 
-    
+    let { lat, lng } = this.#mapOnClickEventObject.latlng;
+    L.marker([lat, lng])
+      .addTo(this.#map)
+      .bindPopup(
+        L.popup({
+          maxWidth: 300,
+          minWidth: 50,
+          autoClose: false,
+          closeButton: false,
+          className: "running-popup",
+          closeOnClick: false,
+        })
+      )
+      .setPopupContent("Workout")
+      .openPopup();
+  }
+}
 
-};
+const AppObject = new App();
